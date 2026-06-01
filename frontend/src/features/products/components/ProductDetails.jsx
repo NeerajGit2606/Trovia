@@ -103,7 +103,7 @@ export const ProductDetails = () => {
     useEffect(() => {
         if (id) {
             dispatch(fetchProductByIdAsync(id))
-            dispatch(fetchReviewsByProductIdAsync(id))
+            dispatch(fetchReviewsByProductIdAsync({ id, page: 1, limit: 5 }))
         }
     }, [id])
 

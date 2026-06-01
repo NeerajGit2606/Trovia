@@ -1,7 +1,7 @@
 const express=require('express')
 const reviewController=require("../controllers/Review")
 const router=express.Router()
-const { authMiddleware, adminMiddleware } = require("../middlewares/auth");
+const { authMiddleware, adminMiddleware } = require("../middleware/auth");
 
 // ⭐ Create review (auth required)
 router.post("/", authMiddleware, reviewController.create);
@@ -10,7 +10,7 @@ router.post("/", authMiddleware, reviewController.create);
 router.get("/product/:id", reviewController.getByProductId);
 
 // ⭐ Update own review (auth required)
-router.put("/:id", authMiddleware, reviewController.updateById);
+router.patch("/:id", authMiddleware, reviewController.updateById);
 
 // ⭐ Delete own review (auth required)
 router.delete("/:id", authMiddleware, reviewController.deleteById);

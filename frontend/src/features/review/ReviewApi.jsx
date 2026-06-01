@@ -8,10 +8,10 @@ export const createReview=async(review)=>{
         throw error.response.data
     }
 }
-export const fetchReviewsByProductId=async(id)=>{
+export const fetchReviewsByProductId = async ({ id, page = 1, limit = 5 }) => {
     try {
-        const res=await axiosi.get(`/reviews/product/${id}`)
-        return res.data
+        const res = await axiosi.get(`/reviews/product/${id}?page=${page}&limit=${limit}`)
+        return { data: res.data, totalCount: res.headers['x-total-count'] }
     } catch (error) {
         throw error.response.data
     }

@@ -70,7 +70,8 @@ const reviewSlice=createSlice({
             })
             .addCase(fetchReviewsByProductIdAsync.fulfilled,(state,action)=>{
                 state.reviewFetchStatus='fulfilled'
-                state.reviews=action.payload
+                 state.reviews = action.payload.data    
+                state.totalCount = parseInt(action.payload.totalCount) 
             })
             .addCase(fetchReviewsByProductIdAsync.rejected,(state,action)=>{
                 state.reviewFetchStatus='rejected'
@@ -114,6 +115,7 @@ export const selectReviewAddStatus=(state)=>state.ReviewSlice.reviewAddStatus
 export const selectReviewDeleteStatus=(state)=>state.ReviewSlice.reviewDeleteStatus
 export const selectReviewUpdateStatus=(state)=>state.ReviewSlice.reviewUpdateStatus
 export const selectReviewFetchStatus=(state)=>state.ReviewSlice.reviewFetchStatus
+export const selectReviewTotalCount=(state)=>state.ReviewSlice.totalCount 
 
 // exporting actions
 export const {resetReviewAddStatus,resetReviewDeleteStatus,resetReviewUpdateStatus,resetReviewFetchStatus}=reviewSlice.actions

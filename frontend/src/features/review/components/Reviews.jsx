@@ -1,7 +1,7 @@
 import { Button, IconButton, LinearProgress, Pagination, Rating, Stack, TextField, Typography, useMediaQuery } from '@mui/material'
 import React, { useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { createReviewAsync, resetReviewAddStatus, resetReviewDeleteStatus, resetReviewUpdateStatus, selectReviewAddStatus, selectReviewDeleteStatus, selectReviewStatus, selectReviewUpdateStatus, selectReviews } from '../ReviewSlice'
+import { createReviewAsync, resetReviewAddStatus, resetReviewDeleteStatus, resetReviewUpdateStatus, selectReviewAddStatus, selectReviewDeleteStatus, selectReviewStatus, selectReviewUpdateStatus, selectReviews ,fetchReviewsByProductIdAsync,selectReviewTotalCount } from '../ReviewSlice'
 import { ReviewItem } from './ReviewItem'
 import { LoadingButton } from '@mui/lab'
 import { useForm } from 'react-hook-form'
@@ -33,8 +33,6 @@ export const Reviews = ({ productId, averageRating }) => {
 
     const is840 = useMediaQuery(theme.breakpoints.down(840))
     const is480 = useMediaQuery(theme.breakpoints.down(480))
-
-    export const selectReviewTotalCount = (state) => state.reviews.totalCount;
 
     const totalCount = useSelector(selectReviewTotalCount); // slice में header से store करना होगा
     const [page, setPage] = useState(1);
@@ -81,6 +79,13 @@ export const Reviews = ({ productId, averageRating }) => {
             dispatch(resetReviewUpdateStatus())
         }
     }, [])
+
+    // ✅ Add karo ye useEffect
+    useEffect(() => {
+      if (productId) {
+        dispatch(fetchReviewsByProductIdAsync({ id: productId, page, limit }))
+    }
+    }, [productId, page])
 
     const ratingCounts = {
         5: 0,
@@ -141,22 +146,25 @@ export const Reviews = ({ productId, averageRating }) => {
 
             </Stack>
 
-            {/* reviews mapping */}
-            <Stack key={review._id}>
-                <ReviewItem
-                    id={review._id}
-                    userid={review.user._id}
-                    comment={review.comment}
-                    createdAt={review.createdAt}
-                    rating={review.rating}
-                    username={review.user.name}
-                />
-                {loggedInUser?.isAdmin && (
-                    <Typography variant="caption" color={review.isApproved ? "success.main" : "error.main"}>
-                        {review.isApproved ? "Approved" : "Pending"}
-                    </Typography>
-                )}
-            </Stack>
+
+            {reviews?.map((review) => (
+                <Stack key={review._id}>
+                    <ReviewItem
+                        id={review._id}
+                        userid={review.user._id}
+                        comment={review.comment}
+                        createdAt={review.createdAt}
+                        rating={review.rating}
+                        username={review.user.name}
+                        isApproved={review.isApproved}
+                    />
+                    {loggedInUser?.isAdmin && (
+                        <Typography color={review.isApproved ? "success.main" : "error.main"}>
+                            {review.isApproved ? "✅ Approved" : "⏳ Pending"}
+                        </Typography>
+                    )}
+                </Stack>
+            ))}
 
             {
                 // add review form
@@ -201,3 +209,4 @@ export const Reviews = ({ productId, averageRating }) => {
         </Stack>
     )
 }
+

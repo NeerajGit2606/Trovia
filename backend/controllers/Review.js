@@ -26,12 +26,9 @@ exports.getByProductId = async (req, res) => {
             skip = pageSize * (page - 1)
             limit = pageSize
         }
-
-        const result = await Review.find({ product: id }).skip(skip).limit(limit).populate('user').exec()
-
         const query = { product: id, isApproved: true };
-        const totalDocs = await Review.find(query).countDocuments().exec();
         const result = await Review.find(query).skip(skip).limit(limit).populate('user').exec();
+        const totalDocs = await Review.find(query).countDocuments().exec();
 
         res.set("X-Total-Count", totalDocs)
         res.status(200).json(result)
