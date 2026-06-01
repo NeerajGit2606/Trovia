@@ -15,6 +15,8 @@ const reviewRoutes = require("./routes/Review")
 const wishlistRoutes = require("./routes/Wishlist")
 const paymentRoutes = require("./routes/Payment")   // ← NEW
 const { connectToDB } = require("./database/db")
+const swaggerUi = require('swagger-ui-express')
+const swaggerSpec = require('./swagger')
 
 const server = express()
 connectToDB()
@@ -29,6 +31,7 @@ server.use(express.json())
 server.use(cookieParser())
 server.use(morgan("tiny"))
 
+server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 server.use("/auth", authRoutes)
 server.use("/users", userRoutes)
 server.use("/products", productRoutes)
