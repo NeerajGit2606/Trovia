@@ -1,239 +1,255 @@
-import * as React from 'react';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import Menu from '@mui/material/Menu';
-import Avatar from '@mui/material/Avatar';
-import Tooltip from '@mui/material/Tooltip';
-import MenuItem from '@mui/material/MenuItem';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Badge, Box, Button, InputAdornment, Stack, TextField, useMediaQuery, useTheme } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
+import { Badge, Box, Drawer, IconButton, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { selectUserInfo } from '../../user/UserSlice';
-import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import { selectCartItems } from '../../cart/CartSlice';
 import { selectLoggedInUser } from '../../auth/AuthSlice';
 import { selectWishlistItems } from '../../wishlist/WishlistSlice';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import TuneIcon from '@mui/icons-material/Tune';
-import SearchIcon from '@mui/icons-material/Search';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import { selectCategories } from '../../categories/CategoriesSlice';
 import { selectProductIsFilterOpen, toggleFilters } from '../../products/ProductSlice';
+import SearchIcon from '@mui/icons-material/Search';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
+import TuneIcon from '@mui/icons-material/Tune';
 
 export const Navbar = ({ isProductList = false }) => {
-  const [anchorElUser, setAnchorElUser] = React.useState(null);
-  const userInfo = useSelector(selectUserInfo)
-  const cartItems = useSelector(selectCartItems)
-  const loggedInUser = useSelector(selectLoggedInUser)
-  const navigate = useNavigate()
-  const dispatch = useDispatch()
-  const theme = useTheme()
-  const is480 = useMediaQuery(theme.breakpoints.down(480))
-  const is768 = useMediaQuery(theme.breakpoints.down(768))
-  const wishlistItems = useSelector(selectWishlistItems)
-  const isProductFilterOpen = useSelector(selectProductIsFilterOpen)
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userInfo = useSelector(selectUserInfo);
+  const cartItems = useSelector(selectCartItems);
+  const loggedInUser = useSelector(selectLoggedInUser);
+  const wishlistItems = useSelector(selectWishlistItems);
+  const categories = useSelector(selectCategories);
+  const isProductFilterOpen = useSelector(selectProductIsFilterOpen);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down(900));
 
-  const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget)
-  const handleCloseUserMenu = () => setAnchorElUser(null)
-  const handleToggleFilters = () => dispatch(toggleFilters())
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  const settings = [
-    { name: "Home", to: "/" },
-    { name: 'Profile', to: loggedInUser?.isAdmin ? "/admin/profile" : "/profile" },
-    { name: loggedInUser?.isAdmin ? 'Orders' : 'My orders', to: loggedInUser?.isAdmin ? "/admin/orders" : "/orders" },
-    { name: 'Logout', to: "/logout" },
+  const navLinks = [
+    { label: 'HOME', to: '/' },
+    { label: 'SHOP', to: '/products' },
+    ...(categories?.slice(0, 4).map(c => ({ label: c.name?.toUpperCase(), to: `/products?category=${c._id}` })) || []),
+    { label: 'CONTACT', to: '/contact' },
+  ];
+
+  const userLinks = loggedInUser?.isAdmin ? [
+    { label: 'Dashboard', to: '/admin/dashboard' },
+    { label: 'Add Product', to: '/admin/add-product' },
+    { label: 'Orders', to: '/admin/orders' },
+    { label: 'Logout', to: '/logout' },
+  ] : [
+    { label: 'My Account', to: '/profile' },
+    { label: 'My Orders', to: '/orders' },
+    { label: 'Wishlist', to: '/wishlist' },
+    { label: 'Logout', to: '/logout' },
   ];
 
   return (
-    <Box>
-      {/* Main Navbar - Dark */}
-      <AppBar position="sticky" sx={{ bgcolor: '#131921', boxShadow: 'none' }}>
-        <Toolbar sx={{ minHeight: '60px !important', px: { xs: 1, md: 2 }, gap: 1 }}>
+    <>
+      <Box
+        component="header"
+        sx={{
+          position: 'sticky', top: 0, zIndex: 1000,
+          bgcolor: 'white',
+          borderBottom: '1px solid #eee',
+          boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.06)' : 'none',
+          transition: 'box-shadow 0.3s',
+        }}
+      >
+        {/* Top bar */}
+        <Box sx={{ bgcolor: '#1a1a1a', py: 0.6, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: '11px', letterSpacing: '2px', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase' }}>
+            Free shipping on orders over $50 · New collection available now
+          </Typography>
+        </Box>
+
+        {/* Main navbar */}
+        <Box sx={{ px: { xs: 2, md: 5 }, py: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+
+          {/* Mobile menu */}
+          {isMobile && (
+            <IconButton onClick={() => setMobileOpen(true)} size="small">
+              <MenuIcon />
+            </IconButton>
+          )}
 
           {/* Logo */}
           <Typography
-            variant="h6"
-            component="a"
-            href="/"
+            component={Link} to="/"
             sx={{
-              fontWeight: 800,
-              color: '#FF9900',
+              fontFamily: '"Playfair Display", "Georgia", serif',
+              fontSize: isMobile ? '1.3rem' : '1.6rem',
+              fontWeight: 400,
+              letterSpacing: '6px',
+              color: '#1a1a1a',
               textDecoration: 'none',
-              letterSpacing: 2,
-              flexShrink: 0,
-              fontSize: is480 ? '1.1rem' : '1.4rem',
-              mr: 1,
+              textTransform: 'uppercase',
             }}
           >
-            RIVAVIO
+            Rivavio
           </Typography>
 
-          {/* Search Bar */}
-          {!is480 && (
-            <Box sx={{ flex: 1, maxWidth: 600 }}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Search products, brands..."
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    bgcolor: 'white',
-                    borderRadius: '4px',
-                    '& fieldset': { border: 'none' },
-                    '&:hover fieldset': { border: 'none' },
-                  },
-                  '& .MuiInputBase-input': { py: 1, fontSize: '0.9rem' },
-                }}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <Box sx={{ bgcolor: '#FF9900', p: '6px 10px', borderRadius: '0 3px 3px 0', cursor: 'pointer', display: 'flex', '&:hover': { bgcolor: '#E47911' } }}>
-                        <SearchIcon sx={{ color: '#000', fontSize: 20 }} />
-                      </Box>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Box>
+          {/* Desktop nav links */}
+          {!isMobile && (
+            <Stack direction="row" spacing={4} alignItems="center">
+              {navLinks.map((link) => (
+                <Typography
+                  key={link.label}
+                  component={Link}
+                  to={link.to}
+                  sx={{
+                    fontSize: '12px', fontWeight: 500,
+                    letterSpacing: '2px', color: '#1a1a1a',
+                    textDecoration: 'none', textTransform: 'uppercase',
+                    position: 'relative',
+                    '&::after': {
+                      content: '""', position: 'absolute', bottom: -4, left: 0,
+                      width: 0, height: '1px', bgcolor: '#1a1a1a',
+                      transition: 'width 0.3s ease',
+                    },
+                    '&:hover::after': { width: '100%' },
+                    '&:hover': { color: '#555' },
+                  }}
+                >
+                  {link.label}
+                </Typography>
+              ))}
+            </Stack>
           )}
 
-          {/* Right Section */}
-          <Stack direction="row" alignItems="center" spacing={is480 ? 0.5 : 1.5} ml="auto">
+          {/* Icons */}
+          <Stack direction="row" spacing={isMobile ? 0.5 : 2} alignItems="center">
+            <IconButton size="small" onClick={() => navigate('/products')} sx={{ color: '#1a1a1a' }}>
+              <SearchIcon fontSize="small" />
+            </IconButton>
 
-            {/* Account */}
-            <Tooltip title="Account">
-              <Box
-                onClick={handleOpenUserMenu}
-                sx={{
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  p: '4px 8px',
-                  borderRadius: 1,
-                  border: '1px solid transparent',
-                  '&:hover': { border: '1px solid white' },
-                }}
+            {/* User */}
+            <Box sx={{ position: 'relative' }}>
+              <IconButton
+                size="small"
+                sx={{ color: '#1a1a1a' }}
+                onClick={() => loggedInUser ? setUserMenuOpen(!userMenuOpen) : navigate('/login')}
               >
-                <Avatar
-                  alt={userInfo?.name}
-                  src="null"
-                  sx={{ width: 28, height: 28, bgcolor: '#FF9900', fontSize: 13, color: '#000', fontWeight: 700 }}
+                <PersonOutlineIcon fontSize="small" />
+              </IconButton>
+              {userMenuOpen && loggedInUser && (
+                <Box
+                  sx={{
+                    position: 'absolute', top: '110%', right: 0,
+                    bgcolor: 'white', border: '1px solid #eee',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.1)',
+                    minWidth: 180, zIndex: 100, py: 1,
+                  }}
+                  onMouseLeave={() => setUserMenuOpen(false)}
                 >
-                  {userInfo?.name?.charAt(0)?.toUpperCase()}
-                </Avatar>
-                {!is480 && (
-                  <Stack>
-                    <Typography variant="body2" fontSize={11} color="#CCC">Hello, {userInfo?.name?.split(' ')[0]}</Typography>
-                    <Stack direction="row" alignItems="center">
-                      <Typography variant="body2" fontSize={13} fontWeight={700} color="white">Account</Typography>
-                      <KeyboardArrowDownIcon sx={{ fontSize: 16, color: 'white' }} />
-                    </Stack>
-                  </Stack>
-                )}
-              </Box>
-            </Tooltip>
-
-            <Menu
-              sx={{ mt: '50px' }}
-              anchorEl={anchorElUser}
-              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-              keepMounted
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              open={Boolean(anchorElUser)}
-              onClose={handleCloseUserMenu}
-              PaperProps={{ sx: { minWidth: 180, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' } }}
-            >
-              {loggedInUser?.isAdmin && (
-                <MenuItem onClick={handleCloseUserMenu}>
-                  <Typography component={Link} color={'text.primary'} sx={{ textDecoration: "none" }} to="/admin/add-product">
-                    Add new Product
-                  </Typography>
-                </MenuItem>
+                  <Box sx={{ px: 2, py: 1, borderBottom: '1px solid #f0f0f0', mb: 0.5 }}>
+                    <Typography sx={{ fontSize: '12px', color: '#888', letterSpacing: '1px' }}>
+                      Hello, {userInfo?.name?.split(' ')[0]}
+                    </Typography>
+                  </Box>
+                  {userLinks.map((link) => (
+                    <Typography
+                      key={link.label}
+                      component={Link}
+                      to={link.to}
+                      onClick={() => setUserMenuOpen(false)}
+                      sx={{
+                        display: 'block', px: 2, py: 1,
+                        fontSize: '13px', color: '#1a1a1a',
+                        textDecoration: 'none', letterSpacing: '1px',
+                        '&:hover': { bgcolor: '#f8f8f8', color: '#C9A96E' },
+                      }}
+                    >
+                      {link.label}
+                    </Typography>
+                  ))}
+                </Box>
               )}
-              {settings.map((setting) => (
-                <MenuItem key={setting.name} onClick={handleCloseUserMenu}>
-                  <Typography component={Link} color={'text.primary'} sx={{ textDecoration: "none" }} to={setting.to}>
-                    {setting.name}
-                  </Typography>
-                </MenuItem>
-              ))}
-            </Menu>
-
-            {/* Orders */}
-            {!is768 && (
-              <Box
-                component={Link}
-                to="/orders"
-                sx={{
-                  textDecoration: 'none',
-                  p: '4px 8px',
-                  borderRadius: 1,
-                  border: '1px solid transparent',
-                  '&:hover': { border: '1px solid white' },
-                }}
-              >
-                <Typography variant="body2" fontSize={11} color="#CCC">Returns</Typography>
-                <Typography variant="body2" fontSize={13} fontWeight={700} color="white">& Orders</Typography>
-              </Box>
-            )}
+            </Box>
 
             {/* Wishlist */}
             {!loggedInUser?.isAdmin && (
-              <Badge badgeContent={wishlistItems?.length} color="error" sx={{ '& .MuiBadge-badge': { bgcolor: '#FF9900', color: '#000', fontWeight: 700 } }}>
-                <IconButton component={Link} to="/wishlist" sx={{ color: 'white', p: 0.5, '&:hover': { color: '#FF9900' } }}>
-                  <FavoriteBorderIcon />
+              <Badge
+                badgeContent={wishlistItems?.length || 0}
+                sx={{ '& .MuiBadge-badge': { bgcolor: '#1a1a1a', color: 'white', fontSize: '10px', minWidth: 16, height: 16 } }}
+              >
+                <IconButton size="small" component={Link} to="/wishlist" sx={{ color: '#1a1a1a' }}>
+                  <FavoriteBorderIcon fontSize="small" />
                 </IconButton>
               </Badge>
             )}
 
             {/* Cart */}
-            <Badge badgeContent={cartItems?.length} color="error" sx={{ '& .MuiBadge-badge': { bgcolor: '#FF9900', color: '#000', fontWeight: 700 } }}>
-              <Box
-                onClick={() => navigate("/cart")}
-                sx={{
-                  display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer',
-                  p: '4px 8px', borderRadius: 1, border: '1px solid transparent',
-                  '&:hover': { border: '1px solid white' },
-                }}
-              >
-                <ShoppingCartOutlinedIcon sx={{ color: 'white' }} />
-                {!is480 && <Typography variant="body2" fontWeight={700} color="white" fontSize={13}>Cart</Typography>}
-              </Box>
+            <Badge
+              badgeContent={cartItems?.length || 0}
+              sx={{ '& .MuiBadge-badge': { bgcolor: '#1a1a1a', color: 'white', fontSize: '10px', minWidth: 16, height: 16 } }}
+            >
+              <IconButton size="small" onClick={() => navigate('/cart')} sx={{ color: '#1a1a1a' }}>
+                <ShoppingBagOutlinedIcon fontSize="small" />
+              </IconButton>
             </Badge>
 
-            {/* Filter toggle */}
             {isProductList && (
-              <IconButton onClick={handleToggleFilters} sx={{ color: isProductFilterOpen ? '#FF9900' : 'white' }}>
-                <TuneIcon />
+              <IconButton size="small" onClick={() => dispatch(toggleFilters())} sx={{ color: isProductFilterOpen ? '#C9A96E' : '#1a1a1a' }}>
+                <TuneIcon fontSize="small" />
               </IconButton>
             )}
+          </Stack>
+        </Box>
+      </Box>
 
-            {/* Admin badge */}
-            {loggedInUser?.isAdmin && (
-              <Button variant="contained" size="small" sx={{ bgcolor: '#FF9900', color: '#000', fontWeight: 700, '&:hover': { bgcolor: '#E47911' } }}>
-                Admin
-              </Button>
+      {/* Mobile Drawer */}
+      <Drawer anchor="left" open={mobileOpen} onClose={() => setMobileOpen(false)}>
+        <Box sx={{ width: 280, p: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography sx={{ fontSize: '1.2rem', letterSpacing: '4px', fontFamily: '"Playfair Display", serif' }}>
+              RIVAVIO
+            </Typography>
+            <IconButton onClick={() => setMobileOpen(false)}><CloseIcon /></IconButton>
+          </Box>
+          <Stack spacing={2}>
+            {navLinks.map((link) => (
+              <Typography
+                key={link.label}
+                component={Link}
+                to={link.to}
+                onClick={() => setMobileOpen(false)}
+                sx={{ fontSize: '13px', letterSpacing: '2px', color: '#1a1a1a', textDecoration: 'none', textTransform: 'uppercase', borderBottom: '1px solid #f0f0f0', pb: 1.5 }}
+              >
+                {link.label}
+              </Typography>
+            ))}
+            {loggedInUser && userLinks.map((link) => (
+              <Typography
+                key={link.label}
+                component={Link}
+                to={link.to}
+                onClick={() => setMobileOpen(false)}
+                sx={{ fontSize: '13px', letterSpacing: '2px', color: '#888', textDecoration: 'none', textTransform: 'uppercase' }}
+              >
+                {link.label}
+              </Typography>
+            ))}
+            {!loggedInUser && (
+              <Typography component={Link} to="/login" onClick={() => setMobileOpen(false)} sx={{ fontSize: '13px', letterSpacing: '2px', color: '#C9A96E', textDecoration: 'none', textTransform: 'uppercase' }}>
+                LOGIN / REGISTER
+              </Typography>
             )}
           </Stack>
-        </Toolbar>
-      </AppBar>
-
-      {/* Secondary nav bar */}
-      <Box sx={{ bgcolor: '#232F3E', py: 0.5, px: 2 }}>
-        <Stack direction="row" spacing={2} alignItems="center">
-          {['All Deals', 'Electronics', 'Fashion', 'Home & Kitchen', 'Sports', 'Books'].map((cat) => (
-            <Typography
-              key={cat}
-              variant="body2"
-              sx={{ color: 'white', cursor: 'pointer', fontSize: 13, py: 0.5, px: 1, borderRadius: 1, border: '1px solid transparent', '&:hover': { border: '1px solid white' }, whiteSpace: 'nowrap' }}
-            >
-              {cat}
-            </Typography>
-          ))}
-        </Stack>
-      </Box>
-    </Box>
+        </Box>
+      </Drawer>
+    </>
   );
-}
+};
