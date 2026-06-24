@@ -1,7 +1,7 @@
 import {
-    FormControl, Grid, IconButton, InputLabel, MenuItem,
-    Select, Slider, Stack, TextField, Typography,
-    useMediaQuery, useTheme, InputAdornment
+    Box, Chip, FormControl, Grid, IconButton, InputAdornment, InputLabel,
+    MenuItem, Select, Slider, Stack, TextField, Typography,
+    useMediaQuery, useTheme
 } from '@mui/material'
 import React, { useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
@@ -37,6 +37,10 @@ import { ProductBanner } from './ProductBanner'
 import ClearIcon from '@mui/icons-material/Clear';
 import SearchIcon from '@mui/icons-material/Search';
 import Lottie from 'lottie-react'
+import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
+import CachedOutlinedIcon from '@mui/icons-material/CachedOutlined';
+import HeadsetMicOutlinedIcon from '@mui/icons-material/HeadsetMicOutlined';
+import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
 
 const sortOptions = [
     { name: "Price: low to high", sort: "price", order: "asc" },
@@ -46,6 +50,13 @@ const sortOptions = [
 
 const bannerImages = [banner1, banner3, banner2, banner4]
 const DEBOUNCE_MS = 400
+
+const trustFeatures = [
+    { icon: <LocalShippingOutlinedIcon />, title: 'Free Shipping', desc: 'On orders over $50' },
+    { icon: <CachedOutlinedIcon />, title: 'Easy Returns', desc: '30-day return policy' },
+    { icon: <HeadsetMicOutlinedIcon />, title: '24/7 Support', desc: 'Always here for you' },
+    { icon: <VerifiedOutlinedIcon />, title: 'Secure Payment', desc: '100% protected' },
+]
 
 export const ProductList = () => {
     const [filters, setFilters] = useState({})
@@ -60,7 +71,6 @@ export const ProductList = () => {
 
     const is1200 = useMediaQuery(theme.breakpoints.down(1200))
     const is800 = useMediaQuery(theme.breakpoints.down(800))
-    const is700 = useMediaQuery(theme.breakpoints.down(700))
     const is600 = useMediaQuery(theme.breakpoints.down(600))
     const is500 = useMediaQuery(theme.breakpoints.down(500))
     const is488 = useMediaQuery(theme.breakpoints.down(488))
@@ -70,16 +80,12 @@ export const ProductList = () => {
     const products = useSelector(selectProducts)
     const totalResults = useSelector(selectProductTotalResults)
     const loggedInUser = useSelector(selectLoggedInUser)
-
     const productFetchStatus = useSelector(selectProductFetchStatus)
     const wishlistItems = useSelector(selectWishlistItems)
     const wishlistItemAddStatus = useSelector(selectWishlistItemAddStatus)
     const wishlistItemDeleteStatus = useSelector(selectWishlistItemDeleteStatus)
     const cartItemAddStatus = useSelector(selectCartItemAddStatus)
-    // BUG FIX: was inside loading branch — now always at top level so sidebar
-    // is always mounted and animation never resets mid-flight
     const isProductFilterOpen = useSelector(selectProductIsFilterOpen)
-
     const dispatch = useDispatch()
 
     const handleBrandFilters = (e) => {
@@ -112,7 +118,6 @@ export const ProductList = () => {
         setPage(1)
     }
 
-    // Commit price range only on mouse-up so we don't spam API on every px
     const handlePriceRangeCommit = (e, newValue) => {
         dispatch(setPriceRange(newValue))
         setPage(1)
@@ -120,10 +125,7 @@ export const ProductList = () => {
 
     const handleFilterClose = () => { dispatch(toggleFilters()) }
 
-    useEffect(() => {
-        window.scrollTo({ top: 0, behavior: "instant" })
-    }, [])
-
+    useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }) }, [])
     useEffect(() => { setPage(1) }, [totalResults])
 
     useEffect(() => {
@@ -137,22 +139,22 @@ export const ProductList = () => {
     }, [filters, page, sort, searchQuery, priceRange])
 
     useEffect(() => {
-        if (wishlistItemAddStatus === 'fulfilled') toast.success("Product added to wishlist")
-        else if (wishlistItemAddStatus === 'rejected') toast.error("Error adding product to wishlist, please try again later")
+        if (wishlistItemAddStatus === 'fulfilled') toast.success("Added to wishlist")
+        else if (wishlistItemAddStatus === 'rejected') toast.error("Error adding to wishlist")
     }, [wishlistItemAddStatus])
 
     useEffect(() => {
-        if (wishlistItemDeleteStatus === 'fulfilled') toast.success("Product removed from wishlist")
-        else if (wishlistItemDeleteStatus === 'rejected') toast.error("Error removing product from wishlist, please try again later")
+        if (wishlistItemDeleteStatus === 'fulfilled') toast.success("Removed from wishlist")
+        else if (wishlistItemDeleteStatus === 'rejected') toast.error("Error removing from wishlist")
     }, [wishlistItemDeleteStatus])
 
     useEffect(() => {
-        if (cartItemAddStatus === 'fulfilled') toast.success("Product added to cart")
-        else if (cartItemAddStatus === 'rejected') toast.error("Error adding product to cart, please try again later")
+        if (cartItemAddStatus === 'fulfilled') toast.success("Added to cart")
+        else if (cartItemAddStatus === 'rejected') toast.error("Error adding to cart")
     }, [cartItemAddStatus])
 
     useEffect(() => {
-        if (productFetchStatus === 'rejected') toast.error("Error fetching products, please try again later")
+        if (productFetchStatus === 'rejected') toast.error("Error fetching products")
     }, [productFetchStatus])
 
     useEffect(() => {
@@ -175,198 +177,216 @@ export const ProductList = () => {
 
     return (
         <>
-            {/* ── Filter sidebar — OUTSIDE loading check so it's always mounted ── */}
-                        <motion.div
+            {/* Filter Sidebar */}
+            <motion.div
                 style={{
-                    position: "fixed",
-                    backgroundColor: "white",
-                    height: "100vh",
-                    padding: '1rem',
-                    overflowY: "scroll",
-                    width: is500 ? "100vw" : "30rem",
-                    zIndex: 500,
-                    top: 0,
+                    position: "fixed", backgroundColor: "white",
+                    height: "100vh", padding: '1.5rem',
+                    overflowY: "scroll", width: is500 ? "100vw" : "22rem",
+                    zIndex: 500, top: 0, boxShadow: '4px 0 20px rgba(0,0,0,0.1)'
                 }}
                 variants={{ show: { left: 0 }, hide: { left: -600 } }}
-                            initial={'hide'}
-                transition={{ ease: "easeInOut", duration: 0.7, type: "spring" }}
+                initial={'hide'}
+                transition={{ ease: "easeInOut", duration: 0.4, type: "spring" }}
                 animate={isProductFilterOpen ? "show" : "hide"}
-                        >
+            >
                 <Stack mb={'5rem'}>
-                                <Typography variant='h4'>Filters</Typography>
-
-                                <IconButton onClick={handleFilterClose} style={{ position: "absolute", top: 15, right: 15 }}>
-                                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                                        <ClearIcon fontSize='medium' />
-                                    </motion.div>
-                                </IconButton>
-
-                    {/* Price range */}
-                                <Stack mt={3}>
-                                    <Accordion defaultExpanded>
-                                        <AccordionSummary expandIcon={<AddIcon />}>
-                                            <Typography>Price Range</Typography>
-                                        </AccordionSummary>
-                                        <AccordionDetails>
-                                            <Stack px={2}>
-                                                <Slider
-                                                    value={priceRange}
-                                        onChange={(e, v) => dispatch(setPriceRange(v))}
-                                        onChangeCommitted={handlePriceRangeCommit}
-                                                    valueLabelDisplay="auto"
-                                                    min={0}
-                                                    max={10000}
-                                                    step={50}
-                                                />
-                                                <Stack flexDirection='row' justifyContent='space-between'>
-                                                    <Typography variant='body2'>${priceRange[0]}</Typography>
-                                                    <Typography variant='body2'>${priceRange[1]}</Typography>
-                                                </Stack>
-                                            </Stack>
-                                        </AccordionDetails>
-                                    </Accordion>
-                                </Stack>
-
-                    {/* Brand filters */}
-                                <Stack mt={2}>
-                                    <Accordion>
-                            <AccordionSummary expandIcon={<AddIcon />}>
-                                            <Typography>Brands</Typography>
-                                        </AccordionSummary>
-                                        <AccordionDetails sx={{ p: 0 }}>
-                                            <FormGroup onChange={handleBrandFilters}>
-                                    {brands?.map((brand) => (
-                                                        <motion.div key={brand._id} style={{ width: "fit-content" }} whileHover={{ x: 5 }} whileTap={{ scale: 0.9 }}>
-                                                            <FormControlLabel sx={{ ml: 1 }} control={<Checkbox />} label={brand.name} value={brand._id} />
-                                                        </motion.div>
-                                    ))}
-                                            </FormGroup>
-                                        </AccordionDetails>
-                                    </Accordion>
-                                </Stack>
-
-                    {/* Category filters */}
-                                <Stack mt={2}>
-                                    <Accordion>
-                            <AccordionSummary expandIcon={<AddIcon />}>
-                                            <Typography>Category</Typography>
-                                        </AccordionSummary>
-                                        <AccordionDetails sx={{ p: 0 }}>
-                                            <FormGroup onChange={handleCategoryFilters}>
-                                    {categories?.map((category) => (
-                                                        <motion.div key={category._id} style={{ width: "fit-content" }} whileHover={{ x: 5 }} whileTap={{ scale: 0.9 }}>
-                                                            <FormControlLabel sx={{ ml: 1 }} control={<Checkbox />} label={category.name} value={category._id} />
-                                                        </motion.div>
-                                    ))}
-                                            </FormGroup>
-                                        </AccordionDetails>
-                                    </Accordion>
-                                </Stack>
-
-                            </Stack>
-                        </motion.div>
-
-            {/* ── Main content ─────────────────────────────────────────────── */}
-            {
-                productFetchStatus === 'pending' ?
-                    <Stack width={is500 ? "35vh" : '25rem'} height={'calc(100vh - 4rem)'} justifyContent={'center'} marginRight={'auto'} marginLeft={'auto'}>
-                        <Lottie animationData={loadingAnimation} />
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+                        <Typography variant='h6' fontWeight={700}>Filters</Typography>
+                        <IconButton onClick={handleFilterClose} size="small">
+                            <ClearIcon />
+                        </IconButton>
                     </Stack>
-                    :
-                        <Stack mb={'3rem'}>
-                        {/* Banners */}
-                        {!is600 &&
-                                <Stack sx={{ width: "100%", height: is800 ? "300px" : is1200 ? "400px" : "500px" }}>
-                                    <ProductBanner images={bannerImages} />
+
+                    {/* Price */}
+                    <Accordion defaultExpanded sx={{ boxShadow: 'none', border: '1px solid #E8E8E1', '&:before': { display: 'none' } }}>
+                        <AccordionSummary expandIcon={<AddIcon />}>
+                            <Typography fontWeight={600} fontSize="14px">Price Range</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            <Stack px={1}>
+                                <Slider
+                                    value={priceRange}
+                                    onChange={(e, v) => dispatch(setPriceRange(v))}
+                                    onChangeCommitted={handlePriceRangeCommit}
+                                    valueLabelDisplay="auto"
+                                    min={0} max={10000} step={50}
+                                    sx={{ color: '#0F1111' }}
+                                />
+                                <Stack direction='row' justifyContent='space-between'>
+                                    <Typography variant='body2' fontWeight={600}>${priceRange[0]}</Typography>
+                                    <Typography variant='body2' fontWeight={600}>${priceRange[1]}</Typography>
                                 </Stack>
-                            }
+                            </Stack>
+                        </AccordionDetails>
+                    </Accordion>
 
-                            <Stack rowGap={5} mt={is600 ? 2 : 0}>
+                    {/* Brands */}
+                    <Accordion sx={{ mt: 1, boxShadow: 'none', border: '1px solid #E8E8E1', '&:before': { display: 'none' } }}>
+                        <AccordionSummary expandIcon={<AddIcon />}>
+                            <Typography fontWeight={600} fontSize="14px">Brands</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails sx={{ p: 0, pb: 1 }}>
+                            <FormGroup onChange={handleBrandFilters}>
+                                {brands?.map((brand) => (
+                                    <motion.div key={brand._id} style={{ width: "fit-content" }} whileHover={{ x: 4 }}>
+                                        <FormControlLabel sx={{ ml: 1, '& .MuiFormControlLabel-label': { fontSize: '14px' } }} control={<Checkbox size="small" sx={{ color: '#666', '&.Mui-checked': { color: '#0F1111' } }} />} label={brand.name} value={brand._id} />
+                                    </motion.div>
+                                ))}
+                            </FormGroup>
+                        </AccordionDetails>
+                    </Accordion>
 
-                            {/* Search + Sort row */}
-                                <Stack
-                                    flexDirection={is600 ? 'column' : 'row'}
-                                    mx={'2rem'}
-                                    justifyContent={'space-between'}
-                                    alignItems={is600 ? 'stretch' : 'center'}
-                                    columnGap={3}
-                                    rowGap={2}
-                                >
-                                    <TextField
-                                        value={searchInput}
-                                        onChange={handleSearchChange}
-                                        placeholder="Search products..."
-                                        variant="outlined"
-                                        size="small"
-                                        sx={{ flex: 1, maxWidth: is600 ? '100%' : '400px' }}
-                                        InputProps={{
-                                            startAdornment: (
-                                                <InputAdornment position="start">
-                                                    <SearchIcon fontSize="small" />
-                                                </InputAdornment>
-                                            ),
-                                            endAdornment: searchInput ? (
-                                                <InputAdornment position="end">
-                                                    <IconButton size="small" onClick={handleClearSearch}>
-                                                        <ClearIcon fontSize="small" />
-                                                    </IconButton>
-                                                </InputAdornment>
-                                            ) : null
-                                        }}
-                                    />
+                    {/* Categories */}
+                    <Accordion sx={{ mt: 1, boxShadow: 'none', border: '1px solid #E8E8E1', '&:before': { display: 'none' } }}>
+                        <AccordionSummary expandIcon={<AddIcon />}>
+                            <Typography fontWeight={600} fontSize="14px">Category</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails sx={{ p: 0, pb: 1 }}>
+                            <FormGroup onChange={handleCategoryFilters}>
+                                {categories?.map((category) => (
+                                    <motion.div key={category._id} style={{ width: "fit-content" }} whileHover={{ x: 4 }}>
+                                        <FormControlLabel sx={{ ml: 1, '& .MuiFormControlLabel-label': { fontSize: '14px' } }} control={<Checkbox size="small" sx={{ color: '#666', '&.Mui-checked': { color: '#0F1111' } }} />} label={category.name} value={category._id} />
+                                    </motion.div>
+                                ))}
+                            </FormGroup>
+                        </AccordionDetails>
+                    </Accordion>
+                </Stack>
+            </motion.div>
 
-                                    <Stack width={'12rem'} alignSelf={is600 ? 'flex-end' : 'center'}>
-                                        <FormControl fullWidth>
-                                            <InputLabel id="sort-dropdown">Sort</InputLabel>
-                                            <Select
-                                                variant='standard'
-                                                labelId="sort-dropdown"
-                                                label="Sort"
-                                                onChange={(e) => setSort(e.target.value)}
-                                                value={sort}
-                                            >
-                                                <MenuItem value={null}>Reset</MenuItem>
-                                            {sortOptions.map((option) => (
-                                                        <MenuItem key={option.name} value={option}>{option.name}</MenuItem>
-                                            ))}
-                                            </Select>
-                                        </FormControl>
+            {/* Main content */}
+            {productFetchStatus === 'pending' ? (
+                <Stack width={is500 ? "35vh" : '25rem'} height={'calc(100vh - 4rem)'} justifyContent={'center'} mx="auto">
+                    <Lottie animationData={loadingAnimation} />
+                </Stack>
+            ) : (
+                <Box>
+                    {/* Hero Banner */}
+                    {!is600 && (
+                        <Box sx={{ width: '100%', height: is800 ? '300px' : is1200 ? '420px' : '520px', overflow: 'hidden' }}>
+                            <ProductBanner images={bannerImages} />
+                        </Box>
+                    )}
+
+                    {/* Trust Features Strip */}
+                    <Box sx={{ bgcolor: '#F7F7F7', borderTop: '1px solid #E8E8E1', borderBottom: '1px solid #E8E8E1', py: 2.5 }}>
+                        <Stack
+                            direction="row"
+                            justifyContent="center"
+                            flexWrap="wrap"
+                            gap={is600 ? 2 : 6}
+                            maxWidth={1200}
+                            mx="auto"
+                            px={2}
+                        >
+                            {trustFeatures.map((f, i) => (
+                                <Stack key={i} direction="row" alignItems="center" gap={1.5}>
+                                    <Box sx={{ color: '#0F1111' }}>{f.icon}</Box>
+                                    <Stack>
+                                        <Typography variant="body2" fontWeight={700} fontSize="13px" color="#0F1111">{f.title}</Typography>
+                                        <Typography variant="body2" color="text.secondary" fontSize="12px">{f.desc}</Typography>
                                     </Stack>
                                 </Stack>
+                            ))}
+                        </Stack>
+                    </Box>
 
-                                {/* Product grid */}
-                                <Grid gap={is700 ? 1 : 2} container justifyContent={'center'} alignContent={'center'}>
-                                {products.map((product) => (
-                                            <ProductCard
-                                                key={product._id}
-                                                id={product._id}
-                                                title={product.title}
-                                                thumbnail={product.thumbnail}
-                                                brand={product.brand.name}
-                                                price={product.price}
-                                                handleAddRemoveFromWishlist={handleAddRemoveFromWishlist}
-                                            />
-                                ))}
-                                </Grid>
+                    <Box px={is600 ? 2 : 4} py={4} maxWidth={1400} mx="auto">
 
-                                {/* Pagination */}
-                                <Stack alignSelf={is488 ? 'center' : 'flex-end'} mr={is488 ? 0 : 5} rowGap={2} p={is488 ? 1 : 0}>
-                                    <Pagination
-                                        size={is488 ? 'medium' : 'large'}
-                                        page={page}
-                                        onChange={(e, page) => setPage(page)}
-                                        count={Math.ceil(totalResults / ITEMS_PER_PAGE)}
-                                        variant="outlined"
-                                        shape="rounded"
-                                    />
-                                    <Typography textAlign={'center'}>
-                                    Showing {(page - 1) * ITEMS_PER_PAGE + 1} to {Math.min(page * ITEMS_PER_PAGE, totalResults)} of {totalResults} results
-                                    </Typography>
-                                </Stack>
+                        {/* Search + Sort */}
+                        <Stack
+                            direction={is600 ? 'column' : 'row'}
+                            justifyContent="space-between"
+                            alignItems={is600 ? 'stretch' : 'center'}
+                            gap={2}
+                            mb={4}
+                        >
+                            <Stack direction="row" alignItems="center" gap={1}>
+                                <Typography variant="h6" fontWeight={700} color="#0F1111">
+                                    All Products
+                                </Typography>
+                                <Chip label={`${totalResults} items`} size="small" sx={{ bgcolor: '#F0F0F0', fontSize: '12px' }} />
+                            </Stack>
 
+                            <Stack direction={is600 ? 'column' : 'row'} gap={2} alignItems={is600 ? 'stretch' : 'center'}>
+                                <TextField
+                                    value={searchInput}
+                                    onChange={handleSearchChange}
+                                    placeholder="Search products..."
+                                    size="small"
+                                    sx={{
+                                        width: is600 ? '100%' : '280px',
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: '2px',
+                                            '&:hover fieldset': { borderColor: '#0F1111' },
+                                            '&.Mui-focused fieldset': { borderColor: '#0F1111', borderWidth: '1px' },
+                                        }
+                                    }}
+                                    InputProps={{
+                                        startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: '#666' }} /></InputAdornment>,
+                                        endAdornment: searchInput ? (
+                                            <InputAdornment position="end">
+                                                <IconButton size="small" onClick={handleClearSearch}><ClearIcon fontSize="small" /></IconButton>
+                                            </InputAdornment>
+                                        ) : null
+                                    }}
+                                />
+                                <FormControl size="small" sx={{ width: is600 ? '100%' : '180px' }}>
+                                    <InputLabel>Sort by</InputLabel>
+                                    <Select
+                                        label="Sort by"
+                                        onChange={(e) => setSort(e.target.value)}
+                                        value={sort}
+                                        sx={{ borderRadius: '2px' }}
+                                    >
+                                        <MenuItem value={null}>Default</MenuItem>
+                                        {sortOptions.map((option) => (
+                                            <MenuItem key={option.name} value={option}>{option.name}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
                             </Stack>
                         </Stack>
-            }
+
+                        {/* Product Grid */}
+                        <Grid container spacing={is600 ? 1.5 : 2.5} justifyContent="flex-start">
+                            {products.map((product) => (
+                                <Grid item key={product._id}>
+                                    <ProductCard
+                                        id={product._id}
+                                        title={product.title}
+                                        thumbnail={product.thumbnail}
+                                        brand={product.brand.name}
+                                        price={product.price}
+                                        stockQuantity={product.stockQuantity}
+                                        handleAddRemoveFromWishlist={handleAddRemoveFromWishlist}
+                                    />
+                                </Grid>
+                            ))}
+                        </Grid>
+
+                        {/* Pagination */}
+                        <Stack alignItems="center" mt={6} gap={1}>
+                            <Pagination
+                                size={is488 ? 'medium' : 'large'}
+                                page={page}
+                                onChange={(e, page) => setPage(page)}
+                                count={Math.ceil(totalResults / ITEMS_PER_PAGE)}
+                                variant="outlined"
+                                shape="rounded"
+                                sx={{
+                                    '& .MuiPaginationItem-root': { borderRadius: '2px' },
+                                    '& .Mui-selected': { bgcolor: '#0F1111 !important', color: 'white', borderColor: '#0F1111' }
+                                }}
+                            />
+                            <Typography variant="body2" color="text.secondary" fontSize="13px">
+                                Showing {(page - 1) * ITEMS_PER_PAGE + 1}–{Math.min(page * ITEMS_PER_PAGE, totalResults)} of {totalResults} results
+                            </Typography>
+                        </Stack>
+                    </Box>
+                </Box>
+            )}
         </>
     )
 }

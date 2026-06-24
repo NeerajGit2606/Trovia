@@ -1,3 +1,5 @@
+// backend/index.js - CLEAN COPY
+
 require("dotenv").config()
 const express = require('express')
 const cors = require('cors')
@@ -13,7 +15,7 @@ const userRoutes = require("./routes/User")
 const addressRoutes = require('./routes/Address')
 const reviewRoutes = require("./routes/Review")
 const wishlistRoutes = require("./routes/Wishlist")
-const paymentRoutes = require("./routes/Payment")   // ← NEW
+const paymentRoutes = require("./routes/Payment")
 const { connectToDB } = require("./database/db")
 const swaggerUi = require('swagger-ui-express')
 const swaggerSpec = require('./swagger')
@@ -22,7 +24,7 @@ const server = express()
 connectToDB()
 
 server.use(cors({
-    origin: process.env.ORIGIN,
+    origin: process.env.ORIGIN || 'http://localhost:3000',
     credentials: true,
     exposedHeaders: ['X-Total-Count'],
     methods: ['GET', 'POST', 'PATCH', 'DELETE']
@@ -32,22 +34,24 @@ server.use(cookieParser())
 server.use(morgan("tiny"))
 
 server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
-server.use("/auth", authRoutes)
-server.use("/users", userRoutes)
-server.use("/products", productRoutes)
-server.use("/orders", orderRoutes)
-server.use("/cart", cartRoutes)
-server.use("/brands", brandRoutes)
-server.use("/categories", categoryRoutes)
-server.use("/address", addressRoutes)
-server.use("/reviews", reviewRoutes)
-server.use("/wishlist", wishlistRoutes)
-server.use("/payment", paymentRoutes)   // ← NEW
+server.use("/api/auth", authRoutes)
+server.use("/api/users", userRoutes)
+server.use("/api/products", productRoutes)
+server.use("/api/orders", orderRoutes)
+server.use("/api/cart", cartRoutes)
+server.use("/api/brands", brandRoutes)
+server.use("/api/categories", categoryRoutes)
+server.use("/api/address", addressRoutes)
+server.use("/api/reviews", reviewRoutes)
+server.use("/api/wishlist", wishlistRoutes)
+server.use("/api/payment", paymentRoutes)
 
 server.get("/", (req, res) => {
     res.status(200).json({ message: 'running' })
 })
 
 server.listen(8000, () => {
-    console.log('server [STARTED] ~ http://localhost:8000');
+    console.log('✅ server [STARTED] ~ http://localhost:8000');
+    console.log('✅ API Base: http://localhost:8000/api');
+    console.log('✅ Products: http://localhost:8000/api/products');
 })
